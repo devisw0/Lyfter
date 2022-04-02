@@ -1,0 +1,62 @@
+pip install osmnx
+
+import osmnx as ox #Osmnx takes snippet from google maps, lays out a shortest distance in realworld roads
+import networkx as nx #to be able to use the functions for the graph
+import random #to randomize the choice of coordinates
+import numpy as np #calculating the distances 
+
+ox.config(log_console=True, use_cache=True) 
+
+
+#place layout
+place     = 'San Jose, California, United States'
+mode      = 'drive' #transportation mode
+optimizer = 'time' #optimization for time
+
+# create graph from OSM within the boundaries of some geocodable place(s)
+graph = ox.graph_from_place(place, network_type = mode, retain_all=False, truncate_by_edge=True, simplify=False) #graph of layout of san Jose
+
+import warnings #to be able to work with warnings
+
+drivers = [] #create array for drivers
+riders = [] #create array for riders
+
+#random coordinates for 10 riders using coordinates in San Jose
+for i in range(100): #run loop 100 times
+  x_rider = round(random.uniform(37.26864, 37.32493),5) #choose a random x from given range as lag for rider, round to 5th decmial
+  y_rider = round(random.uniform(-121.91585, -121.97973),5) #choose a random y from given range as lat for rider, round to 5th decmial
+
+  start_latlng = (x_rider,y_rider) #set start latlang using found x and y
+  riders.append(start_latlng) #to keep going to the loop and appending another coordinating thru the loop
+
+for i in range(150): #run loop 150 times
+  x_driver = round(random.uniform(37.26864, 37.32493),5) #choose a random x from given range as lag for driver, round to 5th decmial
+  y_driver = round(random.uniform(-121.91585, -121.97973),5) #choose a random y from given range as lat for driver, round to 5th decmial
+
+  end_latlng = (x_driver,y_driver) #set end latlang using found x and y
+  drivers.append(end_latlng) #to keep going to the loop and appending another coordinating thru the loop
+
+#finds closest driver to rider
+for rider in riders: #iterate thru all riders
+  A = np.array(drivers) #check all elements in array drivers
+  B = np.array(rider) #choose element from array riders
+  distances = np.linalg.norm(A-B, axis=1) #find closest driver to choosen rider
+  min_index = np.argmin(distances) #set choosen driver to rider
+
+  warnings.filterwarnings("ignore") #ignore warning given (the warning is just a diff way of using"ox.get_nearest_node")
+
+  Gs = ox.utils_graph.get_largest_component(graph, strongly=True) #choose "strong" main roads
+
+  driver_node = ox.get_nearest_node(Gs, (A[min_index])) #set driver node as the choosen index
+  
+  rider_node = ox.get_nearest_node(Gs, rider) #set the first checked rider node
+  
+  shortest_route = nx.shortest_path(Gs, driver_node, rider_node, weight=optimizer) #calculate the shortest route from original and final nodes, optimize by time
+
+  #shortest_route_map = ox.plot_route_folium(Gs, shortest_route, tiles='Stamen Terrain') #form map from graph, use shortest route, and type map is stamen
+
+  length = nx.shortest_path_length(Gs, driver_node, rider_node, weight='length') #define length in meters
+
+  print(round(length*0.0015, 3)) #length in m, divide by speed to find time, convert to mins
+
+shortest_route_map #print graph

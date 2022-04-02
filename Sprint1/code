@@ -1,0 +1,33 @@
+pip install osmnx
+
+pip install geopy
+
+import osmnx as ox #to be able to graph
+import networkx as nx #to be able to graph
+import pandas as pd #to be able to read csv files
+import random #to be able to choose random locations
+import csv #to be able to read csv file
+ox.config(log_console=True, use_cache=True) 
+from geopy.geocoders import Nominatim #import geo encoders to be able to use regualr names for locations
+locator = Nominatim(user_agent = "MinorProject") #set name of project
+
+#df = pd.read_csv('/nyc.csv') #read the csv file named nyc with names of nyc locations to choose from
+
+
+#start_location = df.sample() #choose random location from pdf for starting
+start_latlng = locator.geocode("empire state building").point #set starting location by finding the name of location in the geopy file using the locations regular name
+
+#end_location = df.sample() #choose random location from pdf for ending
+end_latlng = locator.geocode("one world trade center").point #set ending location by finding the name of location in the geopy file using the locations regular name
+
+place     = 'Manhattan, New York City, New York, United States'
+mode      = 'drive'
+optimizer = 'time' 
+
+graph = ox.graph_from_place(place, network_type = mode) #make graph from chosen place (NYC) and choose form as drive
+orig_node = ox.get_nearest_node(graph, start_latlng) #find the closest node to chosen starting location
+dest_node = ox.get_nearest_node(graph, end_latlng) #find the closest node to chosen ending location
+shortest_route = nx.shortest_path(graph, orig_node, dest_node, weight=optimizer) #calculate the shortest route from original and final nodes, optimize by time
+
+shortest_route_map = ox.plot_route_folium(graph, shortest_route, tiles='Stamen Terrain') #form map from graph, use shortest route, and type map is stamen
+shortest_route_map #print map
